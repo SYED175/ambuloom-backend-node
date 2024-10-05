@@ -1,10 +1,12 @@
 import express from "express";
 import { connectDB } from "./data/database.js";
 import studentRouter from "./routes/student.js";
+import adminRouter from "./routes/admin.js";
+import confirmedStudentRouter from "./routes/confirmedStudent.js";
 import { config } from "dotenv";
 import cors from "cors";
-import adminRouter from "./routes/admin.js";
 import cookieParser from "cookie-parser";
+import { errorMiddleware } from "./middleware/error.js";
 
 const app = express();
 
@@ -22,8 +24,6 @@ app.use(
       process.env.FRONTEND_URI_DASHBOARD,
       process.env.FRONTEND_URI_DASHBOARD2,
       process.env.FRONTEND_URI_DASHBOARD3,
-      process.env.FRONTEND_URI_DASHBOARD4,
-      process.env.FRONTEND_URI_DASHBOARD5,
     ],
     credentials: true,
   })
@@ -34,18 +34,16 @@ app.use(cookieParser());
 //Using Routes
 app.use("/api/v1/student", studentRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/confirmedstudent", confirmedStudentRouter);
 
 app.get("/", (req, res) => {
   res.end("Heloo");
 });
 
 app.listen(process.env.PORT, () => {
-  console.log(`${process.env.PORT} started server`);
+  console.log(
+    `started server on port: ${process.env.PORT} in ${process.env.NODE_ENV} mode`
+  );
 });
 
-app.use((err, req, res, next) => {
-  return res.json({
-    success: false,
-    message: err,
-  });
-});
+app.use(errorMiddleware);
