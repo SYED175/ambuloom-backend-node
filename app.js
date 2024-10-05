@@ -37,7 +37,7 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/confirmedstudent", confirmedStudentRouter);
 
 app.get("/", (req, res) => {
-  res.end("Heloo");
+  res.end("Helloo, welcome to Ambaa ul uloom backend!");
 });
 
 app.listen(process.env.PORT, () => {
