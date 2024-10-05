@@ -2,16 +2,13 @@ import { Admin } from "../models/admin.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendCookies } from "../utils/features.js";
+import ErrorHandler from "../utils/ErrorHandler.js";
 
 export const registerAdmin = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     let admin = await Admin.findOne({ email });
-    if (admin)
-      return res.status(404).json({
-        success: false,
-        message: "Admin already exists!",
-      });
+    if (admin) return next(new ErrorHandler("Admin already exists!", 409));
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -33,22 +30,16 @@ export const adminLogin = async (req, res, next) => {
 
     let admin = await Admin.findOne({ email }).select("+password");
     if (!admin)
-      return res.status(404).json({
-        success: false,
-        message: "Email or password is incorrect",
-      });
+      return next(new ErrorHandler("Email or password is incorrect", 401));
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch)
-      return res.json({
-        success: false,
-        message: "Email or password in incorrect",
-      });
+      return next(new ErrorHandler("Email or password is incorrect", 401));
 
     req.admin = admin;
-    sendCookies(admin, 200, admin.name, res);
+    sendCookies(admin, 200, `Welcome back ${admin.name}`, res);
   } catch (error) {
-    next("Email or password is incorrect");
+    next(error);
   }
 };
 
@@ -57,6 +48,8 @@ export const adminLogout = (req, res) => {
     .status(200)
     .cookie("token", "", {
       maxAge: new Date(Date.now()),
+      sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",
+      secure: process.env.NODE_ENV === "Development" ? false : true,
     })
     .json({
       success: true,
@@ -64,7 +57,7 @@ export const adminLogout = (req, res) => {
     });
 };
 
-export const getMyProfile = async (req, res, next) => {
+export const getMyProfile = (req, res, next) => {
   return res.json({
     success: true,
     admin: req.admin,
